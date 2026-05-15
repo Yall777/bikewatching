@@ -10,6 +10,52 @@ mapboxgl.accessToken = accessToken;
 
 const svg = d3.select('#map').select('svg');
 
+let timeFilter = -1;
+
+function formatTime(minutes) {
+    const date = new Date(0, 0, 0, 0, minutes);
+    return date.toLocaleString('en-US', { timeStyle: 'short' });
+}
+
+function minutesSinceMidnight(date) {
+    return date.getHours() * 60 + date.getMinutes();
+}
+
+function filterTripsbyTime(trips, timeFilter) {
+    return timeFilter === -1
+        ? trips
+        : trips.filter((trip) => {
+              const startedMinutes = minutesSinceMidnight(trip.started_at);
+              const endedMinutes = minutesSinceMidnight(trip.ended_at);
+              return (
+                  Math.abs(startedMinutes - timeFilter) <= 60 ||
+                  Math.abs(endedMinutes - timeFilter) <= 60
+              );
+          });
+}
+
+function computeStationTraffic(stations, trips) {
+    const departures = d3.rollup(
+        trips,
+        (v) => v.length,
+        (d) => d.start_station_id,
+    );
+
+    const arrivals = d3.rollup(
+        trips,
+        (v) => v.length,
+        (d) => d.end_station_id,
+    );
+
+    return stations.map((station) => {
+        let id = station.short_name;
+        station.arrivals = arrivals.get(id) ?? 0;
+        station.departures = departures.get(id) ?? 0;
+        station.totalTraffic = station.arrivals + station.departures;
+        return station;
+    });
+}
+
 function getCoords(station) {
     const point = new mapboxgl.LngLat(+station.lon, +station.lat);
     const { x, y } = map.project(point);
@@ -66,32 +112,16 @@ map.on('load', async () => {
         console.error('Error loading JSON:', error);
     }
 
-    let stations = jsonData.data.stations;
-    console.log('Stations Array:', stations);
-
-    const trips = await d3.csv('https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv');
-    console.log('Loaded Trips:', trips);
-
-    const departures = d3.rollup(
-        trips,
-        (v) => v.length,
-        (d) => d.start_station_id,
+    const trips = await d3.csv(
+        'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv',
+        (trip) => {
+            trip.started_at = new Date(trip.started_at);
+            trip.ended_at = new Date(trip.ended_at);
+            return trip;
+        },
     );
 
-    const arrivals = d3.rollup(
-        trips,
-        (v) => v.length,
-        (d) => d.end_station_id,
-    );
-
-    stations = stations.map((station) => {
-        let id = station.short_name;
-        station.arrivals = arrivals.get(id) ?? 0;
-        station.departures = departures.get(id) ?? 0;
-        station.totalTraffic = station.arrivals + station.departures;
-        return station;
-    });
-
+    const stations = computeStationTraffic(jsonData.data.stations, trips);
     console.log('Stations with traffic:', stations);
 
     const radiusScale = d3
@@ -101,7 +131,7 @@ map.on('load', async () => {
 
     const circles = svg
         .selectAll('circle')
-        .data(stations)
+        .data(stations, (d) => d.short_name)
         .enter()
         .append('circle')
         .attr('r', (d) => radiusScale(d.totalTraffic))
@@ -127,4 +157,36 @@ map.on('load', async () => {
     map.on('zoom', updatePositions);
     map.on('resize', updatePositions);
     map.on('moveend', updatePositions);
+
+    const timeSlider = document.getElementById('time-slider');
+    const selectedTime = document.getElementById('selected-time');
+    const anyTimeLabel = document.getElementById('any-time');
+
+    function updateScatterPlot(timeFilter) {
+        const filteredTrips = filterTripsbyTime(trips, timeFilter);
+        const filteredStations = computeStationTraffic(stations, filteredTrips);
+
+        timeFilter === -1 ? radiusScale.range([0, 25]) : radiusScale.range([3, 50]);
+
+        circles
+            .data(filteredStations, (d) => d.short_name)
+            .join('circle')
+            .attr('r', (d) => radiusScale(d.totalTraffic));
+    }
+
+    function updateTimeDisplay() {
+        timeFilter = Number(timeSlider.value);
+
+        if (timeFilter === -1) {
+            selectedTime.textContent = '';
+            anyTimeLabel.style.display = 'block';
+        } else {
+            selectedTime.textContent = formatTime(timeFilter);
+            anyTimeLabel.style.display = 'none';
+        }
+        updateScatterPlot(timeFilter);
+    }
+
+    timeSlider.addEventListener('input', updateTimeDisplay);
+    updateTimeDisplay();
 });
