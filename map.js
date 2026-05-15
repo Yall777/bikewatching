@@ -19,7 +19,7 @@ function getCoords(station) {
 // Initialize the map
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/light-v11',
+    style: 'mapbox://styles/yall777/cmp7hv8m7000o01sm0d8qhp3e',
     center: [-71.09415, 42.36027],
     zoom: 12,
     minZoom: 5,
@@ -69,16 +69,51 @@ map.on('load', async () => {
     let stations = jsonData.data.stations;
     console.log('Stations Array:', stations);
 
+    const trips = await d3.csv('./bluebikes-traffic-2024-03.csv');
+    console.log('Loaded Trips:', trips);
+
+    const departures = d3.rollup(
+        trips,
+        (v) => v.length,
+        (d) => d.start_station_id,
+    );
+
+    const arrivals = d3.rollup(
+        trips,
+        (v) => v.length,
+        (d) => d.end_station_id,
+    );
+
+    stations = stations.map((station) => {
+        let id = station.short_name;
+        station.arrivals = arrivals.get(id) ?? 0;
+        station.departures = departures.get(id) ?? 0;
+        station.totalTraffic = station.arrivals + station.departures;
+        return station;
+    });
+
+    console.log('Stations with traffic:', stations);
+
+    const radiusScale = d3
+        .scaleSqrt()
+        .domain([0, d3.max(stations, (d) => d.totalTraffic)])
+        .range([0, 25]);
+
     const circles = svg
         .selectAll('circle')
         .data(stations)
         .enter()
         .append('circle')
-        .attr('r', 5)
+        .attr('r', (d) => radiusScale(d.totalTraffic))
         .attr('fill', 'steelblue')
         .attr('stroke', 'white')
         .attr('stroke-width', 1)
-        .attr('opacity', 0.8);
+        .attr('opacity', 0.8)
+        .each(function (d) {
+            d3.select(this)
+                .append('title')
+                .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
+        });
 
     function updatePositions() {
         circles
