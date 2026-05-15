@@ -19,7 +19,7 @@ function getCoords(station) {
 // Initialize the map
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/yall777/cmp7hv8m7000o01sm0d8qhp3e',
+    style: 'mapbox://styles/mapbox/light-v11',
     center: [-71.09415, 42.36027],
     zoom: 12,
     minZoom: 5,
