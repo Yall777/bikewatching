@@ -68,7 +68,7 @@ header {
     --color-arrivals: darkorange;
     --color: color-mix(
         in oklch,
-        var(--color-departures) calc(100% * var(--departure-ratio)),
+        var(--color-departures) var(--departure-ratio),
         var(--color-arrivals)
     );
 }

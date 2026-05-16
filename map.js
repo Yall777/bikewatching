@@ -69,7 +69,7 @@ function getCoords(station) {
 // Initialize the map
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/light-v11',
+    style: 'mapbox://styles/yall777/cmp7hv8m7000o01sm0d8qhp3e',
     center: [-71.09415, 42.36027],
     zoom: 12,
     minZoom: 5,
@@ -146,11 +146,9 @@ map.on('load', async () => {
         .enter()
         .append('circle')
         .attr('r', (d) => radiusScale(d.totalTraffic))
-        .attr('fill', 'steelblue')
-        .attr('stroke', 'white')
-        .attr('stroke-width', 1)
-        .attr('opacity', 0.8)
-        .style('--departure-ratio', (d) => stationFlow(d.departures / d.totalTraffic))
+        .style('--departure-ratio', (d) =>
+            d.totalTraffic > 0 ? `${stationFlow(d.departures / d.totalTraffic) * 100}%` : '50%',
+        )
         .each(function (d) {
             d3.select(this)
                 .append('title')
@@ -183,7 +181,9 @@ map.on('load', async () => {
             .data(filteredStations, (d) => d.short_name)
             .join('circle')
             .attr('r', (d) => radiusScale(d.totalTraffic))
-            .style('--departure-ratio', (d) => stationFlow(d.departures / d.totalTraffic));
+            .style('--departure-ratio', (d) =>
+                d.totalTraffic > 0 ? `${stationFlow(d.departures / d.totalTraffic) * 100}%` : '50%',
+            );
     }
 
     function updateTimeDisplay() {
