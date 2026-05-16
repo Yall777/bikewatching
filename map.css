@@ -1,37 +1,54 @@
-html,
-body {
-    margin: 0;
-    padding: 5;
-    height: 100%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 header {
     display: flex;
-    gap: 1em;
-    align-items: baseline;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5em;
 }
 
-header label {
-    margin-left: auto;
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
 }
 
-#selected-time,
-#any-time {
-    display: block;
+.header-left h1 {
+    margin: 0;
+}
+
+.header-left p {
+    margin: 0;
+    color: #555;
+    font-size: 0.9em;
+}
+
+.header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2em;
+}
+
+.header-right label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    white-space: nowrap;
+}
+
+#selected-time {
+    font-size: 0.9em;
+    color: #333;
 }
 
 #any-time {
     font-style: italic;
+    font-size: 0.9em;
     color: #888;
 }
 
 #map {
     width: 100%;
-    height: 100%;
+    flex: 1;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     position: relative;
@@ -45,10 +62,53 @@ header label {
     pointer-events: none;
 }
 
+#map svg circle,
+.legend > div {
+    --color-departures: steelblue;
+    --color-arrivals: darkorange;
+    --color: color-mix(
+        in oklch,
+        var(--color-departures) calc(100% * var(--departure-ratio)),
+        var(--color-arrivals)
+    );
+}
+
 #map svg circle {
-    fill: steelblue;
+    fill: var(--color);
     fill-opacity: 0.6;
     stroke: white;
     stroke-width: 1;
     pointer-events: auto;
+}
+
+.legend {
+    display: flex;
+    gap: 1.5em;
+    margin-block: 0.5em;
+    justify-content: center;
+    align-items: center;
+}
+
+.legend-label {
+    font-weight: bold;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.25em;
+}
+
+.legend > div {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: 0.9em;
+}
+
+.legend > div::before {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--color);
 }
