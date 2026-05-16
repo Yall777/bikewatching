@@ -1,5 +1,5 @@
 // Import Mapbox as an ESM module
-import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
+import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@3/+esm';
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 import { accessToken } from './config.js';
 
